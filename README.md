@@ -10,3 +10,8 @@ name my-redis: Names the container.
 -p 6379:6379: Maps Redis default port.
 
 -d: Runs in detached mode.
+
+# Apply different caching methods
+1. Memory Cache
+2. Distributed Cache
+3. Hybrid Cache
