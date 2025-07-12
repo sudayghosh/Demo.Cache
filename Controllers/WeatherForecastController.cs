@@ -2,6 +2,7 @@ using System;
 using Demo.Cache.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Demo.Cache.Controllers
@@ -21,6 +22,26 @@ namespace Demo.Cache.Controllers
         {
             _logger = logger;
         }
+
+        [HttpGet("bycountry")]
+        public async Task<IResult?> GetWeacherForcastByCountry([FromServices] HybridCache hybridCache
+            , string city, CancellationToken ct)
+        {
+            var key = $"weather-{city}";
+            WeatherForecast? weather = await hybridCache.GetOrCreateAsync<WeatherForecast>(key, async token =>
+            {
+                var weatherForecast = new WeatherForecast
+                { 
+                    Date = DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
+                    TemperatureC = Random.Shared.Next(-20, 55),
+                    Summary = Summaries[Random.Shared.Next(Summaries.Length)],
+                    DateTime = DateTime.Now,
+                };
+                return weatherForecast;
+            }, cancellationToken: ct);
+            return Results.Ok(weather);
+        }
+
 
         [HttpGet("bycity")]
         public async Task<WeatherForecast?> GetWeacherForcastByCity([FromServices] IDistributedCache distributedCache
