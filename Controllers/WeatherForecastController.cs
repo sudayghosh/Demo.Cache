@@ -1,8 +1,8 @@
 using System;
+using Demo.Cache.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
-using Newtonsoft.Json;
 
 namespace Demo.Cache.Controllers
 {
@@ -23,11 +23,11 @@ namespace Demo.Cache.Controllers
         }
 
         [HttpGet("bycity")]
-        public async Task<WeatherForecast> GetWeacherForcastByCity([FromServices] IDistributedCache distributedCache
+        public async Task<WeatherForecast?> GetWeacherForcastByCity([FromServices] IDistributedCache distributedCache
             , string city, CancellationToken ct)
         {
-            var checkCache = await distributedCache.GetStringAsync("weather", ct);
-            if (string.IsNullOrEmpty(checkCache))
+            var key = $"weather-{city}";
+            WeatherForecast? weather = await distributedCache.GetOrCreateAsync<WeatherForecast>(key, async token =>
             {
                 var weatherForecast = new WeatherForecast
                 {
@@ -36,10 +36,9 @@ namespace Demo.Cache.Controllers
                     Summary = Summaries[Random.Shared.Next(Summaries.Length)],
                     DateTime = DateTime.Now,
                 };
-                await distributedCache.SetStringAsync("weather", JsonConvert.SerializeObject(weatherForecast), ct);
                 return weatherForecast;
-            }
-            return JsonConvert.DeserializeObject<WeatherForecast>(checkCache);
+            }, ct: ct);
+            return weather;
         }
 
         [HttpGet(Name = "GetWeatherForecast")]
